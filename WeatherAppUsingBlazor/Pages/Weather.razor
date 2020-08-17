@@ -1,0 +1,65 @@
+﻿@page "/weather"
+@inject HttpClient Http
+
+<h3>Weather</h3>
+
+<label>Enter city name:</label>
+<input @bind="city" />
+
+<button class="btn btn-primary" @onclick="GetWeather">Get Weather</button>
+
+@if (this.WeatherForecast != null)
+{
+    @if (this.WeatherForecast.IsSuccess)
+    {
+        <p>Current weather details:</p>
+        @foreach (var weather in this.WeatherForecast.Weather)
+        {
+            <p>@weather.Main</p>
+        }
+    }
+    else
+    {
+        <p class="error">Failed to fetch weather details..!!! Please check API key and try again.</p>
+    }
+}
+
+@code {
+    private string city { get; set; }
+
+    private WeatherDetails WeatherForecast { get; set; }
+
+    private async Task GetWeather()
+    {
+        string apiKey = "<api-key>";
+        string endpoint = $"http://api.openweathermap.org/data/2.5/weather?q={this.city}&appid={apiKey}";
+
+        var response = await this.Http.GetAsync(endpoint);
+        var rawWeatherData = await response.Content.ReadAsStringAsync();
+        this.WeatherForecast = Newtonsoft.Json.JsonConvert.DeserializeObject<WeatherDetails>(rawWeatherData);
+    }
+
+    public class WeatherDetails
+    {
+        public List<WeatherItem> Weather { get; set; }
+
+        public int Cod { get; set; }
+
+        public bool IsSuccess
+        {
+            get
+            {
+                return this.Cod == 200;
+            }
+        }
+    }
+
+    public class WeatherItem
+    {
+        public int Id { get; set; }
+
+        public string Main { get; set; }
+
+        public string Description { get; set; }
+    }
+}
